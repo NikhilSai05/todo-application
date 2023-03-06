@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<head>
+<link rel="stylesheet"  type="text/css" href="app.css">
+<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>ToDo List Project </h1>
+    <section class="form">
+        <input type="text" id="todoInput" placeholder="Insert your task here..">
+    </section>
+    <ul class="list">
+    </ul>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $.getJSON("/api/todo")
+            .then(addtodos)
+            $("#todoInput").keypress(function(event){
+                if(event.which==13)
+                    createTodo();
+            })
+            $(".list").on("click","li",function(){
+                updateTodo($(this));
+            })
+            $(".list").on('click','span',function(e){
+                e.stopPropagation(); 
+               removeTodo($(this).parent());
+            })
+            .catch(function(err){
+                console.log(err);
+            });
+            function addtodos(todos){
+                todos.forEach((todo)=> {
+                  addTodo(todo);
+                });
+            }
+            function addTodo(todo){
+                var newTodo= $('<li>'+todo.name+'<span>X</span><li>');
+                    newTodo.data('id',todo._id);
+                    newTodo.data('completed',todo.completed);
+                    if(todo.completed){
+                        newTodo.addClass("done");
+                    }
+                   $('.list').append(newTodo);
+            }
+            function createTodo(){
+                var userInput = $("#todoInput").val();
+                $.post('/api/todo',{name:userInput})
+                .then(function(todo){
+                    $("#todoInput").val('');
+                    addTodo(todo);
+                })
+                .catch(function(err){
+                    console.log(err);
+                })
+            }
+            function removeTodo(todo){
+                var id=todo.data('id');
+                $.ajax({
+                    method:'delete',
+                    url:"api/todo/"+id,
+                })
+                .then(function(data){
+                    todo.remove();
+                })
+            }
+            function updateTodo(todo){
+                var isDone = todo.data('completed');
+                var updateData = {completed:!isDone};
+                var updateUrl = "api/todo/"+todo.data('id');
+                $.ajax({
+                    method:'PUT',
+                    url:updateUrl,
+                    data:updateData
+                })
+                .then(function(updatedTodo){
+                    todo.toggleClass("done");
+                })
+            }
+        })
+    </script>
+</body>
+</html>
