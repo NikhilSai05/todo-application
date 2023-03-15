@@ -1,8 +1,9 @@
 var express = require("express");
 var router = express.Router();
-var db = require("../models");
+var db = require("../models/index");
+const toDo = require("../models/todo")
 router.get("/",function(req,res){
-    db.Todo.find()
+    db.toDo.find()
       .then(function(todo){
         res.json(todo);
       })
@@ -14,7 +15,7 @@ router.get("/",function(req,res){
       });   
 });
 router.put("/:todoId",function(req,res){
-    db.Todo.findByIdAndUpdate(req.params.todoId,req.body)
+    db.toDo.findByIdAndUpdate(req.params.todoId,req.body)
     .then(function(todo){
         res.json(todo);
     })
@@ -23,16 +24,30 @@ router.put("/:todoId",function(req,res){
     })
 })
 router.post("/",function(req,res){
-    db.Todo.create(req.body)
-    .then(function(newtodo){
-        res.status(201).json(newtodo);
+    const task=req.body.name;
+    console.log("Task  :",task)
+    console.log(req.body)
+    console.log("Code reached post :",req.body)
+    //Todo.create(req.body)
+    const todo = new toDo(req.body)
+    todo.save((err, data) => {
+        if(err) {
+            console.log("Error saving in mongo db");
+            return;
+        }
+        console.log(data, "Data saved")
+
     })
-    .catch(function(err){
-        console.log(err);
-    })
+    // .then(function(newtodo){
+    //     console.log("Nww todo :",newtodo)
+    //     res.status(201).json(newtodo);
+    // })
+    // .catch(function(err){
+    //     console.log(err);
+    // })
 })
 router.get("/:todoId",function(req,res){
-    db.Todo.findById(req.params.todoId)
+    db.toDo.findById(req.params.todoId)
     .then(function(foundtodo){
         res.json(foundtodo);
     })
@@ -41,7 +56,7 @@ router.get("/:todoId",function(req,res){
     })
 })
 router.delete("/:todoId",function(req,res){
-    db.Todo.findByIdAndRemove(req.params.todoId)
+    db.toDo.findByIdAndRemove(req.params.todoId)
     .then(function(){
         res.json({message:"We deleted it"});
     })
