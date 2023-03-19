@@ -1,7 +1,13 @@
 const mongoose = require("mongoose")
 const todoSchema = new mongoose.Schema({
-    name:String,
-    createdOn:Date
+    name:{
+        type:String,
+        required:"Name cannot be blank"
+    },
+    created_date:{
+        type:Date,
+        default:Date.now
+    }
 });
 
 const toDo = mongoose.model(
