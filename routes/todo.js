@@ -16,7 +16,7 @@ router.get("/", function(req, res) {
 });
 
 router.put("/:todoId", function(req, res) {
-  db.toDo.findByIdAndUpdate(req.params.todoId, req.body)
+  db.toDo.findOneAndUpdate(req.params.todoId, req.body)
     .then(function(todo) {
       if (!todo) {
         return res.status(404).json({error: "Todo not found"});
