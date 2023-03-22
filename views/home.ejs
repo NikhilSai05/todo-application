@@ -40,7 +40,7 @@
                 });
             }
             function addTodo(todo){
-                var newTodo= $('<li>'+todo.name+"   "+todo.created_date.slice(0,10)+'<span>X</span><li>');
+                var newTodo= $('<li>'+todo.name+"                              "+todo.created_date.slice(0,10)+'<span>X</span><li>');
                     newTodo.data('id',todo._id);
                     newTodo.data('completed',todo.completed);
                     newTodo.data('taskLabel',todo.name);
@@ -58,6 +58,7 @@
                 })
                 .catch(function(err){
                     console.log(err);
+                    refreshData()
                 });
             }
             function updateToDoData(taskId){
@@ -70,9 +71,7 @@
                     data:updateData
                 })
                 .then(function(updatedTodo){
-                   
-                    $.getJSON("/api/todo")
-                    .then(addtodos)
+                    refreshData()
                     
                 })
             }
@@ -84,14 +83,17 @@
                 })
                 .then(function(data){
                     todo.remove();
+                    refreshData()
                 });
             }
-            
+            function refreshData(){
+                $.getJSON("/api/todo")
+                    .then(addtodos)
+                    document.location.reload()
+            }
             function updateTodo(todo){
                 var isDone = todo.data('completed');
-                console.log("isDone",isDone);
                 var updateData = {completed:!isDone};
-                console.log("updated data", updateData)
                 document.getElementById('todoInput').setAttribute('value', todo.data('taskLabel'))
                 document.getElementById('todoInput').setAttribute('key',todo.data('id'))
                 todo.toggleClass("done");
