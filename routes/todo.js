@@ -1,75 +1,71 @@
-var express = require("express");
-var router = express.Router();
-var db = require("../models/index");
-const toDo = require("../models/todo")
+const express = require("express");
+const router = express.Router();
+const db = require("../models/index");
+const ToDo = require("../models/todo");
 
-router.get("/", function(req, res) {
-  db.toDo.find()
-    .then(function(todo) {
-      res.json(todo);
-      console.log(todo);
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.status(500).json({error: "Internal server error"});
-    });   
-});
-
-router.put("/:todoId", function(req, res) {
-  db.toDo.findOneAndUpdate(req.params.todoId, req.body)
-    .then(function(todo) {
-      if (!todo) {
-        return res.status(404).json({error: "Todo not found"});
-      }
-      res.json(todo);
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.status(500).json({error: "Internal server error"});
-    });
-});
-
-router.post("/", function(req, res) {
-  const task = req.body.name;
-  if (!task) {
-    return res.status(400).json({error: "Missing task name"});
+router.get("/", async (req, res) => {
+  try {
+    const todos = await ToDo.find();
+    res.json(todos);
+    console.log(todos);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
   }
-  toDo.create(req.body, function(err, newtodo) {
-    if (err) {
-      console.log(err);
-      return res.status(500).json({error: "Error saving to database"});
+});
+
+router.put("/:todoId", async (req, res) => {
+  try {
+    const todo = await ToDo.findByIdAndUpdate(req.params.todoId, req.body, { new: true });
+    if (!todo) {
+      return res.status(404).json({ error: "Todo not found" });
     }
-    console.log(newtodo, "Data saved")
-    res.status(201).json(newtodo);
-  });
+    res.json(todo);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-router.get("/:todoId", function(req, res) {
-  db.toDo.findById(req.params.todoId)
-    .then(function(foundtodo) {
-      if (!foundtodo) {
-        return res.status(404).json({error: "Todo not found"});
-      }
-      res.json(foundtodo);
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.status(500).json({error: "Internal server error"});
-    });
+router.post("/", async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: "Missing task name" });
+    }
+    const newTodo = await ToDo.create(req.body);
+    console.log(newTodo, "Data saved");
+    res.status(201).json(newTodo);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Error saving to database" });
+  }
 });
 
-router.delete("/:todoId", function(req, res) {
-  db.toDo.findByIdAndRemove(req.params.todoId)
-    .then(function(deletedTodo) {
-      if (!deletedTodo) {
-        return res.status(404).json({error: "Todo not found"});
-      }
-      res.json({message: "TASK DELETED"});
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.status(500).json({error: "Internal server error"});
-    });
+router.get("/:todoId", async (req, res) => {
+  try {
+    const foundTodo = await ToDo.findById(req.params.todoId);
+    if (!foundTodo) {
+      return res.status(404).json({ error: "Todo not found" });
+    }
+    res.json(foundTodo);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/:todoId", async (req, res) => {
+  try {
+    const deletedTodo = await ToDo.findByIdAndRemove(req.params.todoId);
+    if (!deletedTodo) {
+      return res.status(404).json({ error: "Todo not found" });
+    }
+    res.json({ message: "TASK DELETED" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 module.exports = router;

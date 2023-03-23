@@ -1,101 +1,78 @@
 <!DOCTYPE html>
+<html>
 <head>
-    <link rel="stylesheet"  type="text/css" href="app.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc=" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <title>ToDo List Project</title>
+    <link rel="stylesheet" href="app.css">
 </head>
 <body>
-    <h1>ToDo List Project </h1>
+    <h1>ToDo List Project</h1>
     <section class="form">
         <input type="text" id="todoInput" placeholder="Insert your task here..">
     </section>
-    <ul class="list">
-    </ul>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $.getJSON("/api/todo")
-            .then(addtodos)
-            .catch(function(err){
-                console.log(err);
-            });
-            $("#todoInput").keypress(function(event){
-                if(event.which==13){
-                    if($(this)[0].defaultValue.length==0){
-                        createTodo();
-                    }else{
-                        updateToDoData(event.currentTarget.attributes.key.nodeValue)
+    <ul class="list"></ul>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var $todoInput = $('#todoInput');
+            var $list = $('.list');
+
+            function addTodoItem(item) {
+                var $newTodo = $('<li></li>').addClass(item.completed ? 'done' : '');
+                $('<li>'+item.name+"   "+item.created_date.slice(0,10)+'<span>X</span>').appendTo($newTodo);
+                $newTodo.data('id', item._id).data('completed', item.completed).data('name', item.name);
+                $newTodo.appendTo($list);
+            }
+
+            function refreshTodoList() {
+                $.get('/api/todo', function(data) {
+                    $list.empty();
+                    $.each(data, function() {
+                        addTodoItem(this);
+                    });
+                });
+            }
+
+            $todoInput.keypress(function(event) {
+                if (event.which === 13) {
+                    var todoId = $todoInput.attr('data-todo-id');
+                    var todoName = $todoInput.val();
+                    if (todoId) {
+                        $.ajax({
+                            url: '/api/todo/' + todoId,
+                            type: 'PUT',
+                            data: { name: todoName }
+                        }).done(function(data) {
+                            $todoInput.val('');
+                            $todoInput.removeAttr();
+                            refreshTodoList();
+                        });
+                    } else {
+                        $.post('/api/todo', { name: todoName }, function(data) {
+                            $todoInput.val('');
+                            refreshTodoList();
+                        });
                     }
                 }
-                    
-            })
-            $(".list").on("click","li",function(){
-                updateTodo($(this));
-            })
-            $(".list").on('click','span',function(e){
-                e.stopPropagation(); 
-                removeTodo($(this).parent());
             });
-            function addtodos(todos){
-                todos.forEach((todo)=> {
-                    addTodo(todo);
-                });
-            }
-            function addTodo(todo){
-                var newTodo= $('<li>'+todo.name+"   "+todo.created_date.slice(0,10)+'<span>X</span><li>');
-                    newTodo.data('id',todo._id);
-                    newTodo.data('completed',todo.completed);
-                    newTodo.data('taskLabel',todo.name);
-                    if(todo.completed){
-                        newTodo.addClass("done");
-                    }
-                   $('.list').append(newTodo);
-            }
-            function createTodo(){
-                var userInput = $("#todoInput").val();
-                $.post('/api/todo',{name:userInput})
-                .then(function(todo){
-                    $("#todoInput").val('');
-                    addTodo(todo);
-                })
-                .catch(function(err){
-                    console.log(err);
-                });
-            }
-            function updateToDoData(taskId){
-                var userInput = $("#todoInput").val();
-                var updateUrl = "api/todo/"+taskId;
-                var updateData = {name:userInput};
+
+            $list.on('click', 'li', function() {
+                var $this = $(this);
+                $todoInput.attr('data-todo-id', $this.data('id')).val($this.data('name')).focus();
+            });
+
+            $list.on('click', 'li span', function(event) {
+                event.stopPropagation();
+                var $this = $(this);
                 $.ajax({
-                    method:'PUT',
-                    url:updateUrl,
-                    data:updateData
-                })
-                .then(function(updatedTodo){
-                   
-                    $.getJSON("/api/todo")
-                    .then(addtodos)
-                    
-                })
-            }
-            function removeTodo(todo){
-                var id=todo.data('id');
-                $.ajax({
-                    method:'delete',
-                    url:"api/todo/"+id,
-                })
-                .then(function(data){
-                    todo.remove();
+                    url: '/api/todo/' + $this.parent().data('id'),
+                    type: 'DELETE'
+                }).done(function(data) {
+                    refreshTodoList();
                 });
-            }
-            
-            function updateTodo(todo){
-                var isDone = todo.data('completed');
-                console.log("isDone",isDone);
-                var updateData = {completed:!isDone};
-                console.log("updated data", updateData)
-                document.getElementById('todoInput').setAttribute('value', todo.data('taskLabel'))
-                document.getElementById('todoInput').setAttribute('key',todo.data('id'))
-                todo.toggleClass("done");
-            }
+            });
+
+            refreshTodoList();
         });
     </script>
 </body>
